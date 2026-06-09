@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { SkillList } from "@/components/SkillList";
 import { CheckCircle } from "lucide-react";
 
@@ -11,20 +11,11 @@ interface Props {
 export default async function HomePage({ searchParams }: Props) {
   const { submitted } = await searchParams;
 
-  const skills = await prisma.skill.findMany({
-    where: { status: "approved" },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const skillsData = skills.map((s) => ({
-    slug: s.slug,
-    name: s.name,
-    description: s.description,
-    category: s.category,
-    authorName: s.authorName,
-    downloads: s.downloads,
-    createdAt: s.createdAt,
-  }));
+  const { data: skills } = await supabase
+    .from("skills")
+    .select("*")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -35,16 +26,13 @@ export default async function HomePage({ searchParams }: Props) {
         </div>
       )}
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-3">
-          发现好用的 AI Skills
-        </h1>
+        <h1 className="text-4xl font-bold mb-3">发现好用的 AI Skills</h1>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          浏览、搜索、一键安装 Claude Code skills。
-          让 AI 技能触手可及。
+          浏览、搜索、一键安装 Claude Code skills。让 AI 技能触手可及。
         </p>
       </div>
 
-      <SkillList skills={skillsData} />
+      <SkillList skills={skills || []} />
     </div>
   );
 }

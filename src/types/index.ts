@@ -1,19 +1,19 @@
-export interface SkillData {
+export interface Skill {
   id: string;
   slug: string;
   name: string;
   description: string;
-  fullContent: string;
+  full_content: string;
   category: SkillCategory;
-  authorName: string;
-  authorGithub: string | null;
-  installCommand: string;
-  repoUrl: string | null;
+  author_name: string;
+  author_github: string | null;
+  install_command: string;
+  repo_url: string | null;
   version: string;
   status: "pending" | "approved" | "rejected";
   downloads: number;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: string;
+  updated_at: string;
 }
 
 export type SkillCategory = "paper" | "career" | "coding" | "exam" | "other";
@@ -33,15 +33,3 @@ export const CATEGORY_COLORS: Record<SkillCategory, string> = {
   exam: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   other: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
 };
-
-export interface SkillFormData {
-  name: string;
-  slug: string;
-  description: string;
-  fullContent: string;
-  category: SkillCategory;
-  authorName: string;
-  authorGithub?: string;
-  installCommand: string;
-  repoUrl?: string;
-}

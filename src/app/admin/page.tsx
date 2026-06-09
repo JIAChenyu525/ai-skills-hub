@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,38 +9,23 @@ import { Separator } from "@/components/ui/separator";
 import {
   CATEGORY_LABELS,
   CATEGORY_COLORS,
-  type SkillData,
+  type Skill,
   type SkillCategory,
 } from "@/types";
-import {
-  Check,
-  X,
-  RefreshCw,
-  Shield,
-  User,
-  Calendar,
-} from "lucide-react";
+import { Check, X, RefreshCw, Shield, User, Calendar } from "lucide-react";
 
 export default function AdminPage() {
-  const [skills, setSkills] = useState<SkillData[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const fetchSkills = async () => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/skills?status=all");
-      if (res.ok) {
-        const data = await res.json();
-        setSkills(data);
-      } else {
-        setError("Failed to load skills");
-      }
-    } catch {
-      setError("Network error");
-    } finally {
-      setLoading(false);
-    }
+    const { data } = await supabase
+      .from("skills")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setSkills(data || []);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -47,19 +33,17 @@ export default function AdminPage() {
   }, []);
 
   const updateStatus = async (slug: string, status: "approved" | "rejected") => {
-    try {
-      const res = await fetch(`/api/skills/${slug}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) {
-        setSkills((prev) =>
-          prev.map((s) => (s.slug === slug ? { ...s, status } : s))
-        );
-      }
-    } catch {
-      alert("操作失败");
+    const { error } = await supabase
+      .from("skills")
+      .update({ status })
+      .eq("slug", slug);
+
+    if (error) {
+      alert("操作失败：" + error.message);
+    } else {
+      setSkills((prev) =>
+        prev.map((s) => (s.slug === slug ? { ...s, status } : s))
+      );
     }
   };
 
@@ -75,9 +59,7 @@ export default function AdminPage() {
             <Shield className="h-5 w-5 text-primary" />
             <h1 className="text-2xl font-bold">管理后台</h1>
           </div>
-          <p className="text-muted-foreground text-sm">
-            审核新提交的 Skills
-          </p>
+          <p className="text-muted-foreground text-sm">审核新提交的 Skills</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchSkills}>
           <RefreshCw className="h-4 w-4 mr-1" />
@@ -87,11 +69,8 @@ export default function AdminPage() {
 
       {loading ? (
         <p className="text-center text-muted-foreground py-12">加载中...</p>
-      ) : error ? (
-        <p className="text-center text-destructive py-12">{error}</p>
       ) : (
         <div className="space-y-6">
-          {/* Pending */}
           <div>
             <h2 className="font-semibold mb-3 flex items-center gap-2">
               <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900">
@@ -99,7 +78,9 @@ export default function AdminPage() {
               </Badge>
             </h2>
             {pending.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">暂无待审核的 Skill</p>
+              <p className="text-sm text-muted-foreground py-4">
+                暂无待审核的 Skill
+              </p>
             ) : (
               pending.map((skill) => {
                 return (
@@ -116,7 +97,6 @@ export default function AdminPage() {
 
           <Separator />
 
-          {/* Approved */}
           <div>
             <h2 className="font-semibold mb-3 flex items-center gap-2">
               <Badge variant="outline" className="bg-green-100 dark:bg-green-900">
@@ -128,7 +108,6 @@ export default function AdminPage() {
             ))}
           </div>
 
-          {/* Rejected */}
           {rejected.length > 0 && (
             <>
               <Separator />
@@ -155,7 +134,7 @@ function SkillReviewCard({
   onApprove,
   onReject,
 }: {
-  skill: SkillData;
+  skill: Skill;
   onApprove: () => void;
   onReject: () => void;
 }) {
@@ -193,25 +172,25 @@ function SkillReviewCard({
         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
           <span className="flex items-center gap-1">
             <User className="h-3 w-3" />
-            {skill.authorName}
+            {skill.author_name}
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {new Date(skill.createdAt).toLocaleDateString("zh-CN")}
+            {new Date(skill.created_at).toLocaleDateString("zh-CN")}
           </span>
         </div>
       </CardHeader>
       <CardContent>
         <pre className="whitespace-pre-wrap text-xs bg-muted rounded p-3 max-h-40 overflow-y-auto font-mono">
-          {skill.fullContent.slice(0, 500)}
-          {skill.fullContent.length > 500 && "..."}
+          {skill.full_content.slice(0, 500)}
+          {skill.full_content.length > 500 && "..."}
         </pre>
       </CardContent>
     </Card>
   );
 }
 
-function SkillInfoCard({ skill }: { skill: SkillData }) {
+function SkillInfoCard({ skill }: { skill: Skill }) {
   const colorClass =
     CATEGORY_COLORS[skill.category as SkillCategory] || CATEGORY_COLORS.other;
   const label =
@@ -224,10 +203,10 @@ function SkillInfoCard({ skill }: { skill: SkillData }) {
         <Badge variant="secondary" className={`text-xs ${colorClass}`}>
           {label}
         </Badge>
-        <span className="text-muted-foreground">by {skill.authorName}</span>
+        <span className="text-muted-foreground">by {skill.author_name}</span>
       </div>
       <span className="text-xs text-muted-foreground">
-        {new Date(skill.createdAt).toLocaleDateString("zh-CN")}
+        {new Date(skill.created_at).toLocaleDateString("zh-CN")}
       </span>
     </div>
   );

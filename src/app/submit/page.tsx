@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,28 +24,35 @@ export default function SubmitPage() {
     name: "",
     slug: "",
     description: "",
-    fullContent: "",
+    full_content: "",
     category: "other" as SkillCategory,
-    authorName: "",
-    authorGithub: "",
-    installCommand: "",
-    repoUrl: "",
+    author_name: "",
+    author_github: "",
+    install_command: "",
+    repo_url: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("/api/skills", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      const { error } = await supabase.from("skills").insert({
+        ...form,
+        status: "pending",
+        downloads: 0,
+        version: "1.0.0",
+        author_github: form.author_github || null,
+        repo_url: form.repo_url || null,
       });
-      if (res.ok) {
-        router.push("/?submitted=1");
+
+      if (error) {
+        if (error.code === "23505") {
+          alert("Slug 已存在，请换一个。");
+        } else {
+          alert("提交失败：" + error.message);
+        }
       } else {
-        const data = await res.json();
-        alert(data.error || "提交失败，请重试");
+        router.push("/?submitted=1");
       }
     } catch {
       alert("提交失败，请检查网络");
@@ -122,8 +130,8 @@ export default function SubmitPage() {
                 <Input
                   required
                   placeholder="你的名字或昵称"
-                  value={form.authorName}
-                  onChange={(e) => updateField("authorName", e.target.value)}
+                  value={form.author_name}
+                  onChange={(e) => updateField("author_name", e.target.value)}
                 />
               </div>
             </div>
@@ -146,8 +154,8 @@ export default function SubmitPage() {
               <Textarea
                 required
                 placeholder="粘贴完整的 SKILL.md 内容..."
-                value={form.fullContent}
-                onChange={(e) => updateField("fullContent", e.target.value)}
+                value={form.full_content}
+                onChange={(e) => updateField("full_content", e.target.value)}
                 rows={10}
                 className="font-mono text-sm"
               />
@@ -159,9 +167,9 @@ export default function SubmitPage() {
                 <Input
                   required
                   placeholder="如：git clone https://..."
-                  value={form.installCommand}
+                  value={form.install_command}
                   onChange={(e) =>
-                    updateField("installCommand", e.target.value)
+                    updateField("install_command", e.target.value)
                   }
                 />
               </div>
@@ -169,8 +177,8 @@ export default function SubmitPage() {
                 <label className="text-sm font-medium">GitHub 仓库</label>
                 <Input
                   placeholder="https://github.com/..."
-                  value={form.repoUrl}
-                  onChange={(e) => updateField("repoUrl", e.target.value)}
+                  value={form.repo_url}
+                  onChange={(e) => updateField("repo_url", e.target.value)}
                 />
               </div>
             </div>
@@ -179,8 +187,8 @@ export default function SubmitPage() {
               <label className="text-sm font-medium">GitHub 用户名</label>
               <Input
                 placeholder="选填"
-                value={form.authorGithub}
-                onChange={(e) => updateField("authorGithub", e.target.value)}
+                value={form.author_github}
+                onChange={(e) => updateField("author_github", e.target.value)}
               />
             </div>
 

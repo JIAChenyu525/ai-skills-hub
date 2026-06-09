@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export async function GET(
   _request: NextRequest,
@@ -7,15 +7,16 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const skill = await prisma.skill.findUnique({
-      where: { slug },
-    });
 
-    if (!skill || skill.status !== "approved") {
-      return NextResponse.json(
-        { error: "Skill not found" },
-        { status: 404 }
-      );
+    const { data: skill, error } = await supabase
+      .from("skills")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "approved")
+      .single();
+
+    if (error || !skill) {
+      return NextResponse.json({ error: "Skill not found" }, { status: 404 });
     }
 
     return NextResponse.json(skill);
@@ -36,14 +37,16 @@ export async function PATCH(
     const { slug } = await params;
     const body = await request.json();
 
-    const skill = await prisma.skill.update({
-      where: { slug },
-      data: {
-        status: body.status,
-      },
-    });
+    const { data, error } = await supabase
+      .from("skills")
+      .update({ status: body.status })
+      .eq("slug", slug)
+      .select()
+      .single();
 
-    return NextResponse.json(skill);
+    if (error) throw error;
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error("PATCH /api/skills/[slug] error:", error);
     return NextResponse.json(

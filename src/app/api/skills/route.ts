@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,28 +8,28 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") || undefined;
     const status = searchParams.get("status") || "approved";
 
-    const where: Record<string, unknown> = {};
+    let dbQuery = supabase
+      .from("skills")
+      .select("*")
+      .order("created_at", { ascending: false });
+
     if (status !== "all") {
-      where.status = status;
+      dbQuery = dbQuery.eq("status", status);
     }
 
     if (query) {
-      where.OR = [
-        { name: { contains: query } },
-        { description: { contains: query } },
-      ];
+      dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
     }
 
     if (category && category !== "all") {
-      where.category = category;
+      dbQuery = dbQuery.eq("category", category);
     }
 
-    const skills = await prisma.skill.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    });
+    const { data, error } = await dbQuery;
 
-    return NextResponse.json(skills);
+    if (error) throw error;
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error("GET /api/skills error:", error);
     return NextResponse.json(
@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
       "name",
       "slug",
       "description",
-      "fullContent",
+      "full_content",
       "category",
-      "authorName",
-      "installCommand",
+      "author_name",
+      "install_command",
     ];
     for (const field of required) {
       if (!body[field]) {
@@ -61,34 +61,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check slug uniqueness
-    const existing = await prisma.skill.findUnique({
-      where: { slug: body.slug },
-    });
-    if (existing) {
-      return NextResponse.json(
-        { error: "Slug already exists. Please choose a different slug." },
-        { status: 409 }
-      );
-    }
-
-    const skill = await prisma.skill.create({
-      data: {
+    const { data, error } = await supabase
+      .from("skills")
+      .insert({
         slug: body.slug,
         name: body.name,
         description: body.description,
-        fullContent: body.fullContent,
+        full_content: body.full_content,
         category: body.category,
-        authorName: body.authorName,
-        authorGithub: body.authorGithub || null,
-        installCommand: body.installCommand,
-        repoUrl: body.repoUrl || null,
+        author_name: body.author_name,
+        author_github: body.author_github || null,
+        install_command: body.install_command,
+        repo_url: body.repo_url || null,
         status: "pending",
         downloads: 0,
-      },
-    });
+      })
+      .select()
+      .single();
 
-    return NextResponse.json(skill, { status: 201 });
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: "Slug already exists" },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
+
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error("POST /api/skills error:", error);
     return NextResponse.json(

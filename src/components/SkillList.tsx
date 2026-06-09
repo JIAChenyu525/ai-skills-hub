@@ -11,7 +11,7 @@ interface SkillItem {
   name: string;
   description: string;
   category: string;
-  authorName: string;
+  author_name: string;
   downloads: number;
 }
 
@@ -59,7 +59,15 @@ export function SkillList({ skills }: SkillListProps) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((skill) => (
-            <SkillCard key={skill.slug} {...skill} />
+            <SkillCard
+              key={skill.slug}
+              slug={skill.slug}
+              name={skill.name}
+              description={skill.description}
+              category={skill.category}
+              authorName={skill.author_name}
+              downloads={skill.downloads}
+            />
           ))}
         </div>
       )}
