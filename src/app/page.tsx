@@ -12,7 +12,7 @@ function HomeContent() {
   const submitted = searchParams.get("submitted");
   const [skills, setSkills] = useState<Array<{
     slug: string; name: string; description: string;
-    category: string; author_name: string; downloads: number;
+    category: string; author_name: string; downloads: number; likes: number;
   }>>([]);
   const [loading, setLoading] = useState(true);
 

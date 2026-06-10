@@ -8,7 +8,7 @@ import { Puzzle } from "lucide-react";
 
 interface SkillItem {
   slug: string; name: string; description: string;
-  category: string; author_name: string; downloads: number;
+  category: string; author_name: string; downloads: number; likes: number;
 }
 
 interface SkillListProps { skills: SkillItem[] }
@@ -49,7 +49,7 @@ export function SkillList({ skills }: SkillListProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((skill, i) => (
             <div key={skill.slug} className="animate-slide-up" style={{ animationDelay: `${i * 80}ms`, animationFillMode: "backwards" }}>
-              <SkillCard {...skill} authorName={skill.author_name} />
+              <SkillCard key={skill.slug} slug={skill.slug} name={skill.name} description={skill.description} category={skill.category} authorName={skill.author_name} downloads={skill.downloads} likes={skill.likes} />
             </div>
           ))}
         </div>

@@ -1,20 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Check, Copy } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-interface CopyButtonProps { text: string; className?: string }
+interface CopyButtonProps {
+  text: string;
+  slug: string;
+  className?: string;
+}
 
-export function CopyButton({ text, className }: CopyButtonProps) {
+export function CopyButton({ text, slug, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
+  const countedRef = useRef(false);
 
   useEffect(() => {
-    if (copied) { const t = setTimeout(() => setCopied(false), 2000); return () => clearTimeout(t); }
+    if (copied) {
+      const t = setTimeout(() => setCopied(false), 2000);
+      return () => clearTimeout(t);
+    }
   }, [copied]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
+
+    // Count download once per page view
+    if (!countedRef.current) {
+      countedRef.current = true;
+      const { data } = await supabase.from("skills").select("downloads").eq("slug", slug).single();
+      if (data) {
+        await supabase.from("skills").update({ downloads: (data.downloads || 0) + 1 }).eq("slug", slug);
+      }
+    }
   };
 
   return (

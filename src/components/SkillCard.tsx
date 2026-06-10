@@ -1,14 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { CATEGORY_COLORS, CATEGORY_LABELS, type SkillCategory } from "@/types";
-import { Download, User, ArrowUpRight } from "lucide-react";
+import { Download, User, ArrowUpRight, Heart } from "lucide-react";
 
 interface SkillCardProps {
   slug: string; name: string; description: string;
-  category: string; authorName: string; downloads: number;
+  category: string; authorName: string; downloads: number; likes: number;
 }
 
-export function SkillCard({ slug, name, description, category, authorName, downloads }: SkillCardProps) {
+export function SkillCard({ slug, name, description, category, authorName, downloads, likes }: SkillCardProps) {
   const colorClass = CATEGORY_COLORS[category as SkillCategory] || CATEGORY_COLORS.other;
   const label = CATEGORY_LABELS[category as SkillCategory] || category;
 
@@ -38,9 +38,15 @@ export function SkillCard({ slug, name, description, category, authorName, downl
             </div>
             {authorName}
           </span>
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Download className="h-3.5 w-3.5" />
-            <span className="font-semibold text-foreground">{downloads}</span>
+          <span className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Heart className="h-3.5 w-3.5" />
+              <span className="font-semibold text-foreground">{likes}</span>
+            </span>
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Download className="h-3.5 w-3.5" />
+              <span className="font-semibold text-foreground">{downloads}</span>
+            </span>
           </span>
         </div>
 

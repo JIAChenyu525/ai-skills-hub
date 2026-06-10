@@ -12,6 +12,7 @@ export interface Skill {
   version: string;
   status: "pending" | "approved" | "rejected";
   downloads: number;
+  likes: number;
   created_at: string;
   updated_at: string;
 }

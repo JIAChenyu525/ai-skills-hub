@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CopyButton } from "@/components/CopyButton";
 import { CATEGORY_COLORS, CATEGORY_LABELS, type Skill, type SkillCategory } from "@/types";
-import { ExternalLink, User, Calendar, Tag, Download, ArrowLeft, Terminal } from "lucide-react";
+import { ExternalLink, User, Calendar, Tag, Download, ArrowLeft, Terminal, Heart } from "lucide-react";
 import Link from "next/link";
+import { LikeButton } from "@/components/LikeButton";
 
 export default function SkillDetailPage() {
   const params = useParams();
@@ -70,8 +71,14 @@ export default function SkillDetailPage() {
             )}
           </span>
           <span className="flex items-center gap-1.5"><Tag className="h-4 w-4" />v{skill.version}</span>
+          <span className="flex items-center gap-1.5"><Heart className="h-4 w-4" /><span className="font-semibold text-foreground">{skill.likes}</span> 喜欢</span>
           <span className="flex items-center gap-1.5"><Download className="h-4 w-4" /><span className="font-semibold text-foreground">{skill.downloads}</span> 次安装</span>
           <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{new Date(skill.created_at).toLocaleDateString("zh-CN")}</span>
+        </div>
+
+        <div className="mt-5 pt-4 border-t border-border flex items-center gap-4">
+          <LikeButton slug={skill.slug} initialLikes={skill.likes} />
+          <span className="text-sm text-muted-foreground">觉得好用？点个喜欢 ❤️</span>
         </div>
       </div>
 
@@ -85,7 +92,7 @@ export default function SkillDetailPage() {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-muted rounded-2xl p-4">
           <code className="flex-1 font-mono text-sm leading-relaxed break-all">{skill.install_command}</code>
-          <CopyButton text={skill.install_command} />
+          <CopyButton text={skill.install_command} slug={skill.slug} />
         </div>
         {skill.repo_url && (
           <a href={skill.repo_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium mt-4 transition-colors">
