@@ -1,21 +1,32 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { SkillList } from "@/components/SkillList";
 import { CheckCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export const dynamic = "force-dynamic";
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const submitted = searchParams.get("submitted");
+  const [skills, setSkills] = useState<Array<{
+    slug: string; name: string; description: string;
+    category: string; author_name: string; downloads: number;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
 
-interface Props {
-  searchParams: Promise<{ submitted?: string }>;
-}
-
-export default async function HomePage({ searchParams }: Props) {
-  const { submitted } = await searchParams;
-
-  const { data: skills } = await supabase
-    .from("skills")
-    .select("*")
-    .eq("status", "approved")
-    .order("created_at", { ascending: false });
+  useEffect(() => {
+    supabase
+      .from("skills")
+      .select("*")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setSkills(data || []);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -31,8 +42,19 @@ export default async function HomePage({ searchParams }: Props) {
           浏览、搜索、一键安装 Claude Code skills。让 AI 技能触手可及。
         </p>
       </div>
-
-      <SkillList skills={skills || []} />
+      {loading ? (
+        <div className="text-center py-20 text-muted-foreground">加载中...</div>
+      ) : (
+        <SkillList skills={skills} />
+      )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-muted-foreground">加载中...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
